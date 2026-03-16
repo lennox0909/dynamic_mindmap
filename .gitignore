@@ -1,0 +1,14 @@
+# macOS 系統檔案
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 圖示快照
+Icon?
+
+# 拇指圖快照資料庫
+._*
+
+# 檔案系統中繼資料
+.Spotlight-V100
+.Trashes
