@@ -97,9 +97,9 @@
                 <span class="hidden lg:inline">下載 HTML</span>
             </button>
             <!-- 適應螢幕按鈕 -->
-            <button id="btn-fit" class="bg-indigo-500 hover:bg-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white px-4 py-3 md:px-5 md:py-3 rounded-xl text-sm md:text-base transition-colors shadow-sm flex items-center gap-2 font-medium" title="將心智圖縮放至畫面中間">
+            <button id="btn-fit" class="bg-indigo-500 hover:bg-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white px-4 py-3 md:px-5 md:py-3 rounded-xl text-sm md:text-base transition-colors shadow-sm flex items-center gap-2 font-medium" title="將心智圖縮放至畫面中間，或恢復原視角">
                 <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                <span class="hidden lg:inline">適應螢幕</span>
+                <span id="fit-text" class="hidden lg:inline">適應螢幕</span>
             </button>
         </div>
     </header>
@@ -452,7 +452,6 @@ markmap:
         import * as markmapCommon from 'https://cdn.jsdelivr.net/npm/markmap-common@0.18.9/+esm';
 
         // 核心關鍵：將 lib、view 與 common 所有的模組方法完美合併到全域變數 window.markmap
-        // 確保 WebFontLoader 在動態載入完成時，能夠順利取得並呼叫 window.markmap.refreshHook
         window.markmap = {
             ...markmapCommon,
             ...markmapView,
@@ -469,6 +468,10 @@ markmap:
 
         // 追蹤目前的 Markmap 設定 (Frontmatter)，用來判斷是否需要重新初始化
         let currentOptionsStr = '';
+
+        // 適應螢幕功能變數
+        let isFitted = false;
+        let prevTransform = null;
 
         // 深色模式切換邏輯
         const htmlEl = document.documentElement;
@@ -504,16 +507,26 @@ markmap:
         const editor = document.getElementById('editor');
         const svgEl = document.getElementById('mindmap');
         const btnFit = document.getElementById('btn-fit');
+        const fitText = document.getElementById('fit-text');
         const btnDownload = document.getElementById('btn-download');
+
+        // 當使用者手動拖曳、縮放或在行動裝置上滑動時，自動解除「已適應」狀態
+        const resetFitState = () => {
+            if (isFitted) {
+                isFitted = false;
+                fitText.innerText = '適應螢幕';
+            }
+        };
+        svgEl.addEventListener('mousedown', resetFitState);
+        svgEl.addEventListener('wheel', resetFitState);
+        svgEl.addEventListener('touchstart', resetFitState);
 
         // 下載 HTML 檔案的專屬邏輯
         btnDownload.addEventListener('click', () => {
-            // 防護措施：使用動態拼接建立正則表達式，避免原始碼被瀏覽器誤判為 script 提早閉合
             const endTag = '<' + '/script>';
             const scriptRegex = new RegExp(endTag, 'gi');
             const safeMarkdown = editor.value.replace(scriptRegex, '&lt;/script&gt;');
             
-            // 使用陣列合併字串，徹底避開樣板字串 (Template Literal) 在部分環境可能引發的解析異常
             const htmlLines = [
                 '<!DOCTYPE html>',
                 '<html lang="zh-TW">',
@@ -538,7 +551,6 @@ markmap:
             ];
             const htmlContent = htmlLines.join('\n');
             
-            // 使用 Blob 生成檔案連結並觸發自動下載
             const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -553,8 +565,12 @@ markmap:
         // 核心更新函數：將 Markdown 轉為心智圖
         const updateMindmap = async (markdown) => {
             try {
-                // 1. 解析 Markdown
-                const { root, features } = transformer.transform(markdown);
+                // 將不可見的特殊空白 (U+00A0) 替換為普通空格，避免 YAML 解析失敗
+                const safeMarkdown = markdown.replace(/\xA0/g, ' ');
+                
+                // 1. 解析淨化後的 Markdown 
+                // 【核心修復】在此處正確提取 frontmatter！
+                const { root, features, frontmatter } = transformer.transform(safeMarkdown);
                 
                 // 2. 獲取並載入所需的資源 (例如 Prism.js 或 KaTeX)
                 const { styles, scripts } = transformer.getUsedAssets(features);
@@ -563,35 +579,59 @@ markmap:
                     await loadJS(scripts, { getMarkmap: () => window.markmap });
                 }
                 
-                // 取得 Markdown frontmatter 內的 markmap 設定並轉換
-                const optionsRaw = root.payload?.markmap || {};
+                // 【核心修復】從 frontmatter 中精準取得 markmap 設定，而非從 root.payload
+                const optionsRaw = frontmatter?.markmap || {};
                 const optionsStr = JSON.stringify(optionsRaw);
                 
-                // 利用 deriveOptions 將 initialExpandLevel 等設定精準轉換為 Markmap 參數
-                const frontmatterOptions = typeof deriveOptions === 'function' 
-                    ? deriveOptions(optionsRaw) 
-                    : optionsRaw;
-                    
-                // 移除 autoFit: true，避免每次點擊展開/折疊或打字時，畫面強制跳動回中間
-                const finalOptions = { ...frontmatterOptions };
+                // 判斷是否為使用者修改了設定區塊 (Frontmatter)
+                const optionsChanged = currentOptionsStr !== optionsStr;
+
+                // 利用 deriveOptions 將設定轉換為 Markmap 參數
+                let finalOptions = typeof deriveOptions === 'function' ? deriveOptions(optionsRaw) : {};
+                
+                // 【強制套用 initialExpandLevel 的保護機制】
+                // 只有在「設定檔有變動」或「第一次載入」時，強制遞迴複寫圖層的折疊狀態
+                if (optionsRaw.initialExpandLevel !== undefined && (optionsChanged || !mm)) {
+                    const level = optionsRaw.initialExpandLevel;
+                    const applyExpand = (node, currentDepth) => {
+                        if (!node.payload) node.payload = {};
+                        // fold: 1 代表折疊, 0 代表展開
+                        node.payload.fold = currentDepth >= level ? 1 : 0;
+                        if (node.children) {
+                            node.children.forEach(c => applyExpand(c, currentDepth + 1));
+                        }
+                    };
+                    applyExpand(root, 0);
+                }
+
+                // 防呆：確保顏色設定能被支援
+                if (!finalOptions.color && optionsRaw.colorFreezeLevel !== undefined) {
+                    const freezeLevel = optionsRaw.colorFreezeLevel;
+                    const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+                    finalOptions.color = (node) => colors[Math.min(node.depth, freezeLevel) % colors.length];
+                }
 
                 // 3. 渲染心智圖
                 if (!mm) {
                     // 第一次初始化
                     currentOptionsStr = optionsStr;
                     mm = Markmap.create(svgEl, finalOptions, root);
-                    mm.fit(); // 初始化後主動適應螢幕一次
-                } else if (currentOptionsStr !== optionsStr) {
-                    // 若偵測到 frontmatter 設定有改變 (如使用者修改 initialExpandLevel)
+                    mm.fit(); 
+                    isFitted = true;
+                    fitText.innerText = '恢復視角';
+                } else if (optionsChanged) {
+                    // 【重點】當使用者更改上方的 yaml 設定時，砍掉重練以確保設定完美生效！
                     currentOptionsStr = optionsStr;
-                    mm.destroy(); // 正確銷毀前一個圖形實例
-                    svgEl.innerHTML = ''; // 清空 SVG 標籤內容
+                    mm.destroy(); 
+                    svgEl.innerHTML = ''; 
                     mm = Markmap.create(svgEl, finalOptions, root);
-                    mm.fit(); // 重新建立後主動適應螢幕一次
+                    mm.fit(); 
+                    isFitted = true;
+                    fitText.innerText = '恢復視角';
+                    prevTransform = null;
                 } else {
-                    // 更新現有資料 (保留使用者手動折疊的狀態與當前視角)
+                    // 一般文字編輯：單純更新資料，保留使用者自己手動滑動、點開的狀態
                     mm.setData(root);
-                    // 移除此處的 mm.fit()，讓使用者在左側編輯時，右側圖形不會一直飛回預設位置
                 }
             } catch (error) {
                 console.error("渲染心智圖時發生錯誤:", error);
@@ -630,17 +670,21 @@ markmap:
             }
         });
 
-        // 監聽「適應螢幕」按鈕
+        // 監聽「適應螢幕」與「恢復視角」切換按鈕
         btnFit.addEventListener('click', () => {
-            if (mm) {
+            if (!mm) return;
+            
+            if (isFitted && prevTransform) {
+                // 恢復使用者前一個記憶的視角位置與縮放大小
+                window.d3.select(svgEl).transition().duration(300).call(mm.zoom.transform, prevTransform);
+                isFitted = false;
+                fitText.innerText = '適應螢幕';
+            } else {
+                // 記錄當下的視角狀態 (利用 D3 的 zoomTransform) 並執行適應螢幕
+                prevTransform = window.d3.zoomTransform(svgEl);
                 mm.fit();
-            }
-        });
-
-        // 處理視窗縮放事件，讓心智圖保持置中
-        window.addEventListener('resize', () => {
-            if (mm) {
-                setTimeout(() => mm.fit(), 200);
+                isFitted = true;
+                fitText.innerText = '恢復視角';
             }
         });
 
