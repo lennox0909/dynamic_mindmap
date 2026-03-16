@@ -7,12 +7,6 @@
     
     <!-- 引入 Tailwind CSS 進行快速樣式排版 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // 配置 Tailwind 支援 class 模式的暗色主題
-        tailwind.config = {
-            darkMode: 'class'
-        }
-    </script>
     
     <!-- 引入 D3.js (Markmap 核心依賴) -->
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
@@ -33,10 +27,6 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8; 
         }
-        /* 深色模式捲軸樣式 */
-        html.dark ::-webkit-scrollbar-track { background: #1f2937; }
-        html.dark ::-webkit-scrollbar-thumb { background: #4b5563; }
-        html.dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
         /* 隱藏預設 textarea 輪廓 */
         textarea:focus {
             outline: none;
@@ -44,17 +34,6 @@
         /* 確保 Markmap 連線正確顯示，避免被 Tailwind 基礎樣式影響 */
         .markmap-link {
             fill: none;
-        }
-        /* Markmap 深色模式特定樣式 */
-        html.dark svg#mindmap {
-            color: #e5e7eb;
-        }
-        html.dark svg#mindmap code {
-            background-color: #374151;
-            color: #e5e7eb;
-        }
-        html.dark svg#mindmap a {
-            color: #60a5fa;
         }
         /* 讓可點擊折疊的「小圓圈」更明顯，增加滑鼠懸停動畫提示 */
         svg#mindmap .markmap-node circle {
@@ -70,10 +49,10 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 h-screen flex flex-col font-sans text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-200 overflow-hidden">
+<body class="bg-gray-50 h-screen flex flex-col font-sans text-gray-800 transition-colors duration-300 overflow-hidden">
 
     <!-- 頂部導覽列 (整合設定按鈕與響應式排版) -->
-    <header class="bg-blue-800 dark:bg-slate-800 text-white p-3 md:p-4 shadow-md flex flex-wrap justify-between items-center z-10 transition-colors duration-300 flex-shrink-0 gap-3">
+    <header class="bg-blue-800 text-white p-3 md:p-4 shadow-md flex flex-wrap justify-between items-center z-10 transition-colors duration-300 flex-shrink-0 gap-3">
         
         <!-- 左側：標題區塊與側邊欄切換 -->
         <div class="flex items-center gap-2">
@@ -127,12 +106,6 @@
 
         <!-- 右側：功能按鈕區塊 -->
         <div class="flex items-center justify-end gap-2 md:gap-3 flex-grow sm:flex-grow-0">
-            <!-- 主題切換按鈕 -->
-            <button id="btn-theme" class="bg-white/10 hover:bg-white/20 text-white p-2 md:p-2.5 rounded-full transition-all duration-300 flex items-center justify-center transform hover:scale-105 active:scale-95 border border-white/20" title="切換深色/淺色模式">
-                <svg id="icon-sun" class="w-5 h-5 md:w-6 md:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                <svg id="icon-moon" class="w-5 h-5 md:w-6 md:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-            </button>
-            
             <!-- 下載 Markdown 按鈕 -->
             <button id="btn-download-md" class="bg-teal-600 hover:bg-teal-500 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="匯出 Markdown 原始檔">
                 <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -163,13 +136,13 @@
     <main id="main-container" class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         
         <!-- 左側編輯區 (加入 id 並設定預設排版比例) -->
-        <section id="editor-pane" class="w-full h-1/2 md:w-2/5 md:h-full bg-white dark:bg-gray-800 flex flex-col shadow-inner transition-colors duration-300 flex-shrink-0">
-            <div class="bg-gray-100 dark:bg-gray-700 px-4 py-3 text-sm md:text-base font-semibold text-gray-500 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 flex justify-between transition-colors duration-300">
+        <section id="editor-pane" class="w-full h-1/2 md:w-2/5 md:h-full bg-white flex flex-col shadow-inner transition-colors duration-300 flex-shrink-0">
+            <div class="bg-gray-100 px-4 py-3 text-sm md:text-base font-semibold text-gray-500 border-b border-gray-200 flex justify-between transition-colors duration-300">
                 <span>Markdown 編輯區</span>
                 <span class="hidden md:inline">支援 HTML & 數學公式</span>
             </div>
             <!-- 加大字體讓觸控或閱讀更舒適，並防止 iOS 自動縮放 -->
-            <textarea id="editor" class="flex-1 p-5 w-full h-full resize-none font-mono text-base md:text-lg leading-relaxed text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 transition-colors duration-300" spellcheck="false">
+            <textarea id="editor" class="flex-1 p-5 w-full h-full resize-none font-mono text-base md:text-lg leading-relaxed text-gray-700 bg-white transition-colors duration-300" spellcheck="false">
 ---
 title: markmap
 markmap:
@@ -492,17 +465,17 @@ markmap:
         </section>
 
         <!-- 拖曳調整桿 (Resizer) -->
-        <div id="resizer" class="w-full h-3 md:w-3 md:h-full bg-gray-300 dark:bg-gray-600 hover:bg-blue-400 dark:hover:bg-blue-500 active:bg-blue-500 flex items-center justify-center cursor-row-resize md:cursor-col-resize z-20 flex-shrink-0 transition-colors shadow-sm">
+        <div id="resizer" class="w-full h-3 md:w-3 md:h-full bg-gray-300 hover:bg-blue-400 active:bg-blue-500 flex items-center justify-center cursor-row-resize md:cursor-col-resize z-20 flex-shrink-0 transition-colors shadow-sm">
             <!-- 小圓點視覺提示 -->
             <div class="flex md:flex-col gap-1">
-                <div class="w-1 h-1 bg-gray-500 dark:bg-gray-400 rounded-full"></div>
-                <div class="w-1 h-1 bg-gray-500 dark:bg-gray-400 rounded-full"></div>
-                <div class="w-1 h-1 bg-gray-500 dark:bg-gray-400 rounded-full"></div>
+                <div class="w-1 h-1 bg-gray-500 rounded-full"></div>
+                <div class="w-1 h-1 bg-gray-500 rounded-full"></div>
+                <div class="w-1 h-1 bg-gray-500 rounded-full"></div>
             </div>
         </div>
 
         <!-- 右側心智圖顯示區 -->
-        <section class="flex-1 relative bg-white dark:bg-gray-900 transition-colors duration-300 overflow-hidden">
+        <section class="flex-1 relative bg-white transition-colors duration-300 overflow-hidden">
             <svg id="mindmap" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
         </section>
 
@@ -543,37 +516,6 @@ markmap:
         let isFitted = false;
         let prevTransform = null;
         let isEditorVisible = true;
-
-        // 深色模式切換邏輯
-        const htmlEl = document.documentElement;
-        const btnTheme = document.getElementById('btn-theme');
-        const iconSun = document.getElementById('icon-sun');
-        const iconMoon = document.getElementById('icon-moon');
-
-        const updateThemeIcon = () => {
-            if (htmlEl.classList.contains('dark')) {
-                iconSun.classList.remove('hidden');
-                iconMoon.classList.add('hidden');
-            } else {
-                iconSun.classList.add('hidden');
-                iconMoon.classList.remove('hidden');
-            }
-        };
-
-        // 初始化主題：檢查 localStorage 或系統偏好設定
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            htmlEl.classList.add('dark');
-        } else {
-            htmlEl.classList.remove('dark');
-        }
-        updateThemeIcon();
-
-        btnTheme.addEventListener('click', () => {
-            htmlEl.classList.toggle('dark');
-            const isDark = htmlEl.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            updateThemeIcon();
-        });
 
         // ==========================================
         // 收合/展開編輯區邏輯
@@ -801,18 +743,17 @@ markmap:
             // 1. 複製一份當前的 SVG 節點，避免修改到畫面上的實際元素
             const clone = svgEl.cloneNode(true);
             
-            // 2. 判斷當下是深色還是淺色主題，寫入基礎樣式，確保 SVG 獨立於 HTML 之外時，連線與文字能正確顯示
+            // 2. 由於已固定為淺色主題，直接寫入淺色基礎樣式
             const style = document.createElement('style');
-            const isDark = htmlEl.classList.contains('dark');
-            const bgColor = isDark ? '#111827' : '#ffffff'; // Tailwind gray-900 / white
-            const textColor = isDark ? '#e5e7eb' : '#1f2937'; // Tailwind gray-200 / gray-800
-            const codeBgColor = isDark ? '#374151' : '#f3f4f6'; // Tailwind gray-700 / gray-100
+            const bgColor = '#ffffff'; // Tailwind white
+            const textColor = '#1f2937'; // Tailwind gray-800
+            const codeBgColor = '#f3f4f6'; // Tailwind gray-100
             
             style.textContent = `
                 .markmap-link { fill: none; }
                 .markmap-node circle { cursor: pointer; }
                 foreignObject { overflow: visible; }
-                /* 繼承當下主題的文字與背景顏色 */
+                /* 繼承淺色主題的文字與背景顏色 */
                 svg { background-color: ${bgColor}; color: ${textColor}; font-family: sans-serif; }
                 code { background-color: ${codeBgColor}; border-radius: 4px; padding: 2px 4px; }
             `;
