@@ -137,9 +137,12 @@
         
         <!-- 左側編輯區 (加入 id 並設定預設排版比例) -->
         <section id="editor-pane" class="w-full h-1/2 md:w-2/5 md:h-full bg-white flex flex-col shadow-inner transition-colors duration-300 flex-shrink-0">
-            <div class="bg-gray-100 px-4 py-3 text-sm md:text-base font-semibold text-gray-500 border-b border-gray-200 flex justify-between transition-colors duration-300">
-                <span>Markdown 編輯區</span>
-                <span class="hidden md:inline">支援 HTML & 數學公式</span>
+            <div class="bg-gray-100 px-4 py-3 text-sm md:text-base font-semibold text-gray-500 border-b border-gray-200 flex justify-between items-center transition-colors duration-300">
+                <div class="flex items-center gap-2">
+                    <span>Markdown 編輯區</span>
+                    <span id="save-status" class="text-xs text-emerald-600 font-normal opacity-0 transition-opacity duration-300">已自動儲存</span>
+                </div>
+                <span class="hidden md:inline text-xs font-normal">支援 HTML & 數學公式</span>
             </div>
             <!-- 加大字體讓觸控或閱讀更舒適，並防止 iOS 自動縮放 -->
             <textarea id="editor" class="flex-1 p-5 w-full h-full resize-none font-mono text-base md:text-lg leading-relaxed text-gray-700 bg-white transition-colors duration-300" spellcheck="false">
@@ -547,6 +550,7 @@ markmap:
         const btnDownload = document.getElementById('btn-download');
         const btnDownloadSvg = document.getElementById('btn-download-svg');
         const btnDownloadMd = document.getElementById('btn-download-md');
+        const saveStatus = document.getElementById('save-status'); // 取得儲存狀態提示元素
 
         // ==========================================
         // 面板拖曳調整大小 (Resizer) 邏輯支援滑鼠與觸控
@@ -857,10 +861,23 @@ markmap:
 
         // 防抖函數 (Debounce)，避免使用者輸入太快時造成效能問題
         let timeout;
+        let saveTimeout; // 控制提示文字消失的計時器
         const debounceUpdate = (markdown) => {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
                 updateMindmap(markdown);
+                
+                // 【新增功能】自動暫存到 localStorage
+                localStorage.setItem('vghtpe_markmap_content', markdown);
+                
+                // 顯示「已自動儲存」提示，2秒後淡出
+                if (saveStatus) {
+                    saveStatus.classList.remove('opacity-0');
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(() => {
+                        saveStatus.classList.add('opacity-0');
+                    }, 2000);
+                }
             }, 300); // 延遲 300 毫秒更新
         };
 
@@ -916,7 +933,11 @@ markmap:
             }
         });
 
-        // 初次載入時渲染預設內容
+        // 初次載入時渲染預設內容或讀取先前的暫存內容
+        const savedContent = localStorage.getItem('vghtpe_markmap_content');
+        if (savedContent) {
+            editor.value = savedContent;
+        }
         updateMindmap(editor.value);
     </script>
 </body>
