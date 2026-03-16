@@ -75,8 +75,17 @@
     <!-- 頂部導覽列 (整合設定按鈕與響應式排版) -->
     <header class="bg-indigo-600 dark:bg-indigo-800 text-white p-3 md:p-4 shadow-md flex flex-wrap justify-between items-center z-10 transition-colors duration-300 flex-shrink-0 gap-3">
         
-        <!-- 左側：標題區塊 -->
+        <!-- 左側：標題區塊與側邊欄切換 -->
         <div class="flex items-center gap-2">
+            <!-- 收合/展開編輯區按鈕 -->
+            <button id="btn-toggle-editor" class="bg-white/10 hover:bg-white/20 text-white p-1.5 md:p-2 rounded-lg transition-all duration-300 flex items-center justify-center border border-white/20" title="收合/展開編輯區">
+                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 4v16"></path>
+                </svg>
+            </button>
+
+            <!-- 裝飾用小圖示與標題 -->
             <svg class="w-6 h-6 md:w-7 md:h-7 text-white hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
             </svg>
@@ -525,13 +534,17 @@ markmap:
         // 追蹤目前的 Markmap 設定，用來判斷是否需要重新初始化
         let currentOptionsStr = '';
 
-        // UI 下拉選單元素
+        // UI 相關元素
         const selExpand = document.getElementById('sel-expand');
         const selColor = document.getElementById('sel-color');
+        const btnToggleEditor = document.getElementById('btn-toggle-editor');
+        const editorPane = document.getElementById('editor-pane');
+        const resizer = document.getElementById('resizer');
 
         // 適應螢幕功能變數
         let isFitted = false;
         let prevTransform = null;
+        let isEditorVisible = true;
 
         // 深色模式切換邏輯
         const htmlEl = document.documentElement;
@@ -564,6 +577,29 @@ markmap:
             updateThemeIcon();
         });
 
+        // ==========================================
+        // 收合/展開編輯區邏輯
+        // ==========================================
+        btnToggleEditor.addEventListener('click', () => {
+            isEditorVisible = !isEditorVisible;
+            
+            // 使用 display 切換可完美與 Flexbox 共存，不會破壞原有拖曳設定的 width/height
+            editorPane.style.display = isEditorVisible ? '' : 'none';
+            resizer.style.display = isEditorVisible ? '' : 'none';
+            
+            // 給按鈕加上不同的背景狀態提示
+            if (isEditorVisible) {
+                btnToggleEditor.classList.replace('bg-white/30', 'bg-white/10');
+            } else {
+                btnToggleEditor.classList.replace('bg-white/10', 'bg-white/30');
+            }
+
+            // 延遲一點點讓 DOM 完成 Flexbox 重新佈局，然後重新置中心智圖
+            if (mm) {
+                setTimeout(() => mm.fit(), 50);
+            }
+        });
+
         const editor = document.getElementById('editor');
         const svgEl = document.getElementById('mindmap');
         const btnFit = document.getElementById('btn-fit');
@@ -575,8 +611,6 @@ markmap:
         // ==========================================
         // 面板拖曳調整大小 (Resizer) 邏輯支援滑鼠與觸控
         // ==========================================
-        const resizer = document.getElementById('resizer');
-        const editorPane = document.getElementById('editor-pane');
         const mainContainer = document.getElementById('main-container');
         let isResizing = false;
 
@@ -668,6 +702,18 @@ markmap:
         
         // 建立一個通用的儲存檔案函式，使用 File System Access API 來喚起「另存新檔」對話框
         const saveFile = async (blob, suggestedName, description, acceptTypes) => {
+            // 定義傳統下載的退回方案 (Fallback)
+            const fallbackDownload = () => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = suggestedName; // 瀏覽器會根據使用者的設定決定是否跳出視窗詢問
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
             try {
                 // 檢查瀏覽器是否支援現代的 File System Access API
                 if ('showSaveFilePicker' in window) {
@@ -682,23 +728,17 @@ markmap:
                     await writable.write(blob);
                     await writable.close();
                 } else {
-                    // 若不支援（例如 Firefox 或部分行動裝置），退回傳統的下載方式
-                    // 傳統方式的儲存位置將由瀏覽器的預設行為決定
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = suggestedName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
+                    // 若本身不支援（例如部分行動裝置），直接退回傳統下載方式
+                    fallbackDownload();
                 }
             } catch (err) {
-                // 如果使用者取消儲存 (AbortError)，則忽略錯誤
-                if (err.name !== 'AbortError') {
-                    console.error('儲存檔案失敗:', err);
-                    alert('儲存檔案時發生錯誤！');
-                }
+                // 如果是使用者自己按了「取消」 (AbortError)，則什麼都不做
+                if (err.name === 'AbortError') return;
+
+                // 在跨網域 iframe 預覽環境中，呼叫 showSaveFilePicker 會拋出 SecurityError
+                // 遇到此安全性阻擋時，不要報錯，而是靜默地退回傳統下載模式，確保功能正常運作
+                console.warn('受限於 iframe 安全政策，退回傳統下載模式:', err.message);
+                fallbackDownload();
             }
         };
 
