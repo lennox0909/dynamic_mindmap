@@ -504,6 +504,7 @@ markmap:
         
         // Markmap 實例變數
         let mm;
+        let currentRoot = null; // 追蹤當前的資料樹，用於儲存折疊狀態
 
         // 追蹤目前的 Markmap 設定，用來判斷是否需要重新初始化
         let currentOptionsStr = '';
@@ -551,6 +552,38 @@ markmap:
         const btnDownloadSvg = document.getElementById('btn-download-svg');
         const btnDownloadMd = document.getElementById('btn-download-md');
         const saveStatus = document.getElementById('save-status'); // 取得儲存狀態提示元素
+
+        // ==========================================
+        // 視覺狀態 (View State) 儲存邏輯：折疊、縮放、平移
+        // ==========================================
+        let viewStateTimeout;
+        const saveViewState = () => {
+            if (!mm || !currentRoot) return;
+            
+            // 遞迴取得所有被使用者折疊的節點路徑
+            const getFoldedPaths = (node, path = "0", folded = []) => {
+                if (node.payload && node.payload.fold === 1) folded.push(path);
+                if (node.children) {
+                    node.children.forEach((c, i) => getFoldedPaths(c, `${path}-${i}`, folded));
+                }
+                return folded;
+            };
+            
+            const state = {
+                transform: window.d3.zoomTransform(svgEl), // 取得目前的平移與縮放值
+                foldedPaths: getFoldedPaths(currentRoot),  // 取得被收合的節點列表
+                isFitted: isFitted                         // 記錄目前是否為「適應螢幕」狀態
+            };
+            localStorage.setItem('vghtpe_markmap_viewstate', JSON.stringify(state));
+        };
+
+        const debounceSaveViewState = () => {
+            clearTimeout(viewStateTimeout);
+            viewStateTimeout = setTimeout(saveViewState, 500); // 等待動畫或資料更新完成後再存檔
+        };
+
+        // 點擊節點（展開/收合）時觸發儲存
+        svgEl.addEventListener('click', debounceSaveViewState);
 
         // ==========================================
         // 面板拖曳調整大小 (Resizer) 邏輯支援滑鼠與觸控
@@ -607,9 +640,12 @@ markmap:
             document.removeEventListener('mouseup', stopResize);
             document.removeEventListener('touchend', stopResize);
             
-            // 拖曳結束後，通知 Markmap 更新並重新置中一次
+            // 拖曳結束後，通知 Markmap 更新並重新置中一次，並儲存狀態
             if (mm) {
-                setTimeout(() => mm.fit(), 50);
+                setTimeout(() => {
+                    mm.fit();
+                    debounceSaveViewState();
+                }, 50);
             }
         };
 
@@ -626,14 +662,21 @@ markmap:
                 editorPane.style.height = '';
                 lastIsDesktop = currentIsDesktop;
             }
+            if (mm) {
+                setTimeout(() => {
+                    mm.fit();
+                    debounceSaveViewState();
+                }, 200);
+            }
         });
 
-        // 當使用者手動拖曳、縮放或在行動裝置上滑動時，自動解除「已適應」狀態
+        // 當使用者手動拖曳、縮放或在行動裝置上滑動時，自動解除「已適應」狀態並存檔
         const resetFitState = () => {
             if (isFitted) {
                 isFitted = false;
                 fitText.innerText = '適應螢幕';
             }
+            debounceSaveViewState(); // 使用者調整視角後觸發儲存
         };
         svgEl.addEventListener('mousedown', resetFitState);
         svgEl.addEventListener('wheel', resetFitState);
@@ -777,13 +820,14 @@ markmap:
         });
 
         // 核心更新函數：將 Markdown 轉為心智圖
-        const updateMindmap = async (markdown) => {
+        const updateMindmap = async (markdown, isInitialLoad = false) => {
             try {
                 // 將不可見的特殊空白 (U+00A0) 替換為普通空格，避免 YAML 解析失敗
                 const safeMarkdown = markdown.replace(/\xA0/g, ' ');
                 
                 // 1. 解析淨化後的 Markdown 
                 const { root, features, frontmatter } = transformer.transform(safeMarkdown);
+                currentRoot = root; // 記下當前的根節點
                 
                 // 2. 獲取並載入所需的資源 (例如 Prism.js 或 KaTeX)
                 const { styles, scripts } = transformer.getUsedAssets(features);
@@ -810,15 +854,38 @@ markmap:
                 // 利用 deriveOptions 將設定轉換為 Markmap 參數
                 let finalOptions = typeof deriveOptions === 'function' ? deriveOptions(optionsRaw) : {};
                 
+                // 【新增】讀取儲存的視角與折疊狀態
+                let savedViewState = null;
+                if (isInitialLoad) {
+                    const stateStr = localStorage.getItem('vghtpe_markmap_viewstate');
+                    if (stateStr) {
+                        try {
+                            savedViewState = JSON.parse(stateStr);
+                        } catch (e) {
+                            console.error('無法解析儲存的視角狀態', e);
+                        }
+                    }
+                }
+
                 // 【強制套用 initialExpandLevel 的保護機制】
-                if (optionsRaw.initialExpandLevel !== undefined && (optionsChanged || !mm)) {
+                if (isInitialLoad && savedViewState && savedViewState.foldedPaths) {
+                    // 若有暫存的折疊狀態，優先還原暫存的狀態（覆蓋預設層級）
+                    const applyFoldedPaths = (node, foldedPaths, path = "0") => {
+                        if (!node.payload) node.payload = {};
+                        node.payload.fold = foldedPaths.includes(path) ? 1 : 0;
+                        if (node.children) {
+                            node.children.forEach((c, i) => applyFoldedPaths(c, foldedPaths, `${path}-${i}`));
+                        }
+                    };
+                    applyFoldedPaths(root, savedViewState.foldedPaths);
+                } else if (optionsRaw.initialExpandLevel !== undefined && (optionsChanged || !mm)) {
+                    // 若沒有暫存，則套用設定好的層級展開機制
                     const level = optionsRaw.initialExpandLevel;
                     const applyExpand = (node, currentDepth) => {
                         if (!node.payload) node.payload = {};
-                        // fold: 1 代表折疊, 0 代表展開
                         node.payload.fold = currentDepth >= level ? 1 : 0;
                         if (node.children) {
-                            node.children.forEach(c => applyExpand(c, currentDepth + 1));
+                            node.children.forEach((c, i) => applyExpand(c, currentDepth + 1));
                         }
                     };
                     applyExpand(root, 0);
@@ -837,11 +904,26 @@ markmap:
                     // 第一次初始化
                     currentOptionsStr = optionsStr;
                     mm = Markmap.create(svgEl, finalOptions, root);
-                    mm.fit(); 
-                    isFitted = true;
-                    fitText.innerText = '恢復視角';
+                    
+                    if (isInitialLoad && savedViewState && savedViewState.transform) {
+                        // 恢復縮放與平移狀態
+                        const t = savedViewState.transform;
+                        // 利用 d3 API 將狀態還原
+                        const d3Transform = window.d3.zoomIdentity.translate(t.x, t.y).scale(t.k);
+                        setTimeout(() => {
+                            window.d3.select(svgEl).call(mm.zoom.transform, d3Transform);
+                        }, 50); // 稍微延遲讓 D3 與 Markmap 初始化完畢
+                        
+                        isFitted = savedViewState.isFitted || false;
+                        fitText.innerText = isFitted ? '恢復視角' : '適應螢幕';
+                        if (!isFitted) prevTransform = t; // 若非適應螢幕，把它當作先前視角記下來
+                    } else {
+                        mm.fit(); 
+                        isFitted = true;
+                        fitText.innerText = '恢復視角';
+                    }
                 } else if (optionsChanged) {
-                    // 【重點】當使用者更改上方的 yaml 或 UI 設定時，砍掉重練以確保設定完美生效！
+                    // 當使用者更改上方的 yaml 或 UI 設定時，砍掉重練以確保設定完美生效
                     currentOptionsStr = optionsStr;
                     mm.destroy(); 
                     svgEl.innerHTML = ''; 
@@ -862,23 +944,25 @@ markmap:
         // 防抖函數 (Debounce)，避免使用者輸入太快時造成效能問題
         let timeout;
         let saveTimeout; // 控制提示文字消失的計時器
-        const debounceUpdate = (markdown) => {
+        const debounceUpdate = (markdown, isInitialLoad = false) => {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
-                updateMindmap(markdown);
+                updateMindmap(markdown, isInitialLoad);
                 
-                // 【新增功能】自動暫存到 localStorage
-                localStorage.setItem('vghtpe_markmap_content', markdown);
-                
-                // 顯示「已自動儲存」提示，2秒後淡出
-                if (saveStatus) {
-                    saveStatus.classList.remove('opacity-0');
-                    clearTimeout(saveTimeout);
-                    saveTimeout = setTimeout(() => {
-                        saveStatus.classList.add('opacity-0');
-                    }, 2000);
+                if (!isInitialLoad) {
+                    // 【新增功能】自動暫存到 localStorage
+                    localStorage.setItem('vghtpe_markmap_content', markdown);
+                    
+                    // 顯示「已自動儲存」提示，2秒後淡出
+                    if (saveStatus) {
+                        saveStatus.classList.remove('opacity-0');
+                        clearTimeout(saveTimeout);
+                        saveTimeout = setTimeout(() => {
+                            saveStatus.classList.add('opacity-0');
+                        }, 2000);
+                    }
                 }
-            }, 300); // 延遲 300 毫秒更新
+            }, isInitialLoad ? 0 : 300); // 初始載入時不需要延遲
         };
 
         // 監聽編輯器輸入事件
@@ -924,13 +1008,7 @@ markmap:
                 isFitted = true;
                 fitText.innerText = '恢復視角';
             }
-        });
-
-        // 處理視窗縮放事件，讓心智圖保持置中
-        window.addEventListener('resize', () => {
-            if (mm) {
-                setTimeout(() => mm.fit(), 200);
-            }
+            debounceSaveViewState(); // 按下按鈕後儲存狀態
         });
 
         // 初次載入時渲染預設內容或讀取先前的暫存內容
@@ -938,7 +1016,8 @@ markmap:
         if (savedContent) {
             editor.value = savedContent;
         }
-        updateMindmap(editor.value);
+        debounceUpdate(editor.value, true); // 標記為初次載入，並觸發渲染與還原視角
+
     </script>
 </body>
 </html>
