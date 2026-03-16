@@ -124,6 +124,18 @@
                 <svg id="icon-moon" class="w-5 h-5 md:w-6 md:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
             </button>
             
+            <!-- 下載 Markdown 按鈕 -->
+            <button id="btn-download-md" class="bg-purple-500 hover:bg-purple-400 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="匯出 Markdown 原始檔">
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span class="hidden lg:inline">下載 MD</span>
+            </button>
+
+            <!-- 下載 SVG 按鈕 -->
+            <button id="btn-download-svg" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="匯出當前視角的 SVG 圖片">
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span class="hidden lg:inline">下載 SVG</span>
+            </button>
+
             <!-- 下載 HTML 按鈕 -->
             <button id="btn-download" class="bg-green-500 hover:bg-green-400 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="匯出為單獨的 HTML 檔案">
                 <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -557,6 +569,8 @@ markmap:
         const btnFit = document.getElementById('btn-fit');
         const fitText = document.getElementById('fit-text');
         const btnDownload = document.getElementById('btn-download');
+        const btnDownloadSvg = document.getElementById('btn-download-svg');
+        const btnDownloadMd = document.getElementById('btn-download-md');
 
         // ==========================================
         // 面板拖曳調整大小 (Resizer) 邏輯支援滑鼠與觸控
@@ -648,8 +662,55 @@ markmap:
         svgEl.addEventListener('wheel', resetFitState);
         svgEl.addEventListener('touchstart', resetFitState);
 
+        // ==========================================
+        // 匯出與下載功能區塊
+        // ==========================================
+        
+        // 建立一個通用的儲存檔案函式，使用 File System Access API 來喚起「另存新檔」對話框
+        const saveFile = async (blob, suggestedName, description, acceptTypes) => {
+            try {
+                // 檢查瀏覽器是否支援現代的 File System Access API
+                if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName,
+                        types: [{
+                            description,
+                            accept: acceptTypes
+                        }]
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                } else {
+                    // 若不支援（例如 Firefox 或部分行動裝置），退回傳統的下載方式
+                    // 傳統方式的儲存位置將由瀏覽器的預設行為決定
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = suggestedName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            } catch (err) {
+                // 如果使用者取消儲存 (AbortError)，則忽略錯誤
+                if (err.name !== 'AbortError') {
+                    console.error('儲存檔案失敗:', err);
+                    alert('儲存檔案時發生錯誤！');
+                }
+            }
+        };
+
+        // 下載 Markdown 檔案的專屬邏輯
+        btnDownloadMd.addEventListener('click', async () => {
+            const markdownContent = editor.value;
+            const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+            await saveFile(blob, 'markmap-mindmap.md', 'Markdown 檔案', { 'text/markdown': ['.md', '.markdown'] });
+        });
+
         // 下載 HTML 檔案的專屬邏輯
-        btnDownload.addEventListener('click', () => {
+        btnDownload.addEventListener('click', async () => {
             const endTag = '<' + '/script>';
             const scriptRegex = new RegExp(endTag, 'gi');
             
@@ -693,14 +754,44 @@ markmap:
             const htmlContent = htmlLines.join('\n');
             
             const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'markmap-mindmap.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            await saveFile(blob, 'markmap-mindmap.html', 'HTML 網頁檔案', { 'text/html': ['.html'] });
+        });
+
+        // 下載 SVG 檔案的專屬邏輯 (保留當前視角)
+        btnDownloadSvg.addEventListener('click', async () => {
+            if (!svgEl) return;
+            
+            // 1. 複製一份當前的 SVG 節點，避免修改到畫面上的實際元素
+            const clone = svgEl.cloneNode(true);
+            
+            // 2. 判斷當下是深色還是淺色主題，寫入基礎樣式，確保 SVG 獨立於 HTML 之外時，連線與文字能正確顯示
+            const style = document.createElement('style');
+            const isDark = htmlEl.classList.contains('dark');
+            const bgColor = isDark ? '#111827' : '#ffffff'; // Tailwind gray-900 / white
+            const textColor = isDark ? '#e5e7eb' : '#1f2937'; // Tailwind gray-200 / gray-800
+            const codeBgColor = isDark ? '#374151' : '#f3f4f6'; // Tailwind gray-700 / gray-100
+            
+            style.textContent = `
+                .markmap-link { fill: none; }
+                .markmap-node circle { cursor: pointer; }
+                foreignObject { overflow: visible; }
+                /* 繼承當下主題的文字與背景顏色 */
+                svg { background-color: ${bgColor}; color: ${textColor}; font-family: sans-serif; }
+                code { background-color: ${codeBgColor}; border-radius: 4px; padding: 2px 4px; }
+            `;
+            clone.insertBefore(style, clone.firstChild);
+            
+            // 3. 確保命名空間 (XMLNS) 存在，否則瀏覽器無法識別其為 SVG 檔案
+            if (!clone.getAttribute('xmlns')) {
+                clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            }
+            
+            // 4. 將 SVG 節點轉換為字串格式
+            const svgData = new XMLSerializer().serializeToString(clone);
+            
+            // 5. 建立 Blob 並觸發儲存對話框
+            const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            await saveFile(blob, 'markmap-mindmap.svg', 'SVG 圖片檔案', { 'image/svg+xml': ['.svg'] });
         });
 
         // 核心更新函數：將 Markdown 轉為心智圖
