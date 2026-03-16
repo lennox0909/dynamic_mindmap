@@ -73,7 +73,7 @@
 <body class="bg-gray-50 h-screen flex flex-col font-sans text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-200 overflow-hidden">
 
     <!-- 頂部導覽列 (整合設定按鈕與響應式排版) -->
-    <header class="bg-indigo-600 dark:bg-indigo-800 text-white p-3 md:p-4 shadow-md flex flex-wrap justify-between items-center z-10 transition-colors duration-300 flex-shrink-0 gap-3">
+    <header class="bg-blue-800 dark:bg-slate-800 text-white p-3 md:p-4 shadow-md flex flex-wrap justify-between items-center z-10 transition-colors duration-300 flex-shrink-0 gap-3">
         
         <!-- 左側：標題區塊與側邊欄切換 -->
         <div class="flex items-center gap-2">
@@ -97,7 +97,7 @@
             <!-- 展開層級控制 -->
             <div class="flex items-center gap-1 md:gap-2">
                 <label for="sel-expand" class="text-xs md:text-sm font-medium px-1 whitespace-nowrap">展開</label>
-                <select id="sel-expand" class="bg-white text-gray-800 text-xs md:text-sm rounded-lg px-2 py-1.5 md:px-3 md:py-2 outline-none cursor-pointer focus:ring-2 focus:ring-indigo-400 font-medium shadow-sm transition-all">
+                <select id="sel-expand" class="bg-white text-gray-800 text-xs md:text-sm rounded-lg px-2 py-1.5 md:px-3 md:py-2 outline-none cursor-pointer focus:ring-2 focus:ring-blue-400 font-medium shadow-sm transition-all">
                     <option value="-1">依文本設定</option>
                     <option value="1">第 1 層</option>
                     <option value="2">第 2 層</option>
@@ -113,7 +113,7 @@
             <!-- 色彩鎖定控制 -->
             <div class="flex items-center gap-1 md:gap-2">
                 <label for="sel-color" class="text-xs md:text-sm font-medium px-1 whitespace-nowrap">色彩</label>
-                <select id="sel-color" class="bg-white text-gray-800 text-xs md:text-sm rounded-lg px-2 py-1.5 md:px-3 md:py-2 outline-none cursor-pointer focus:ring-2 focus:ring-indigo-400 font-medium shadow-sm transition-all">
+                <select id="sel-color" class="bg-white text-gray-800 text-xs md:text-sm rounded-lg px-2 py-1.5 md:px-3 md:py-2 outline-none cursor-pointer focus:ring-2 focus:ring-blue-400 font-medium shadow-sm transition-all">
                     <option value="-1">依文本設定</option>
                     <option value="0">不凍結</option>
                     <option value="1">第 1 層</option>
@@ -134,7 +134,7 @@
             </button>
             
             <!-- 下載 Markdown 按鈕 -->
-            <button id="btn-download-md" class="bg-purple-500 hover:bg-purple-400 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="匯出 Markdown 原始檔">
+            <button id="btn-download-md" class="bg-teal-600 hover:bg-teal-500 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="匯出 Markdown 原始檔">
                 <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 <span class="hidden lg:inline">下載 MD</span>
             </button>
@@ -146,13 +146,13 @@
             </button>
 
             <!-- 下載 HTML 按鈕 -->
-            <button id="btn-download" class="bg-green-500 hover:bg-green-400 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="匯出為單獨的 HTML 檔案">
+            <button id="btn-download" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="匯出為單獨的 HTML 檔案">
                 <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 <span class="hidden lg:inline">下載 HTML</span>
             </button>
             
             <!-- 適應螢幕按鈕 -->
-            <button id="btn-fit" class="bg-indigo-500 hover:bg-indigo-400 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="將心智圖縮放至畫面中間，或恢復原視角">
+            <button id="btn-fit" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="將心智圖縮放至畫面中間，或恢復原視角">
                 <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
                 <span id="fit-text" class="hidden lg:inline">適應螢幕</span>
             </button>
@@ -440,8 +440,6 @@ markmap:
 1. 社會工作組
 2. 輔導組
 
-
-
 ## 輔助單位
 ### 公共事務室（02）
 1. 公共關係組
@@ -494,7 +492,7 @@ markmap:
         </section>
 
         <!-- 拖曳調整桿 (Resizer) -->
-        <div id="resizer" class="w-full h-3 md:w-3 md:h-full bg-gray-300 dark:bg-gray-600 hover:bg-indigo-400 dark:hover:bg-indigo-500 active:bg-indigo-500 flex items-center justify-center cursor-row-resize md:cursor-col-resize z-20 flex-shrink-0 transition-colors shadow-sm">
+        <div id="resizer" class="w-full h-3 md:w-3 md:h-full bg-gray-300 dark:bg-gray-600 hover:bg-blue-400 dark:hover:bg-blue-500 active:bg-blue-500 flex items-center justify-center cursor-row-resize md:cursor-col-resize z-20 flex-shrink-0 transition-colors shadow-sm">
             <!-- 小圓點視覺提示 -->
             <div class="flex md:flex-col gap-1">
                 <div class="w-1 h-1 bg-gray-500 dark:bg-gray-400 rounded-full"></div>
@@ -683,7 +681,6 @@ markmap:
                 lastIsDesktop = currentIsDesktop;
             }
         });
-
 
         // 當使用者手動拖曳、縮放或在行動裝置上滑動時，自動解除「已適應」狀態
         const resetFitState = () => {
@@ -885,7 +882,8 @@ markmap:
                 // 防呆：確保顏色設定能被支援
                 if (!finalOptions.color && optionsRaw.colorFreezeLevel !== undefined) {
                     const freezeLevel = optionsRaw.colorFreezeLevel;
-                    const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+                    // 使用榮總風格的醫療配色 (深藍、亮藍、藍綠、橘、紅、淺青等)
+                    const colors = ['#00508C', '#00A0E9', '#00B2A9', '#F39200', '#E60012', '#71C5E8', '#C4D600', '#8A8D8F'];
                     finalOptions.color = (node) => colors[Math.min(node.depth, freezeLevel) % colors.length];
                 }
 
