@@ -64,56 +64,90 @@
         svg#mindmap .markmap-node circle:hover {
             r: 6px; 
         }
+        /* 調整桿的觸控優化，防止觸控時網頁跟著滾動 */
+        #resizer {
+            touch-action: none;
+        }
     </style>
 </head>
-<body class="bg-gray-50 h-screen flex flex-col font-sans text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-200">
+<body class="bg-gray-50 h-screen flex flex-col font-sans text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-200 overflow-hidden">
 
-    <!-- 頂部導覽列 (特別針對平板觸控放大並重新排版) -->
-    <header class="bg-indigo-600 dark:bg-indigo-800 text-white p-4 md:p-5 shadow-md flex justify-between items-center z-10 transition-colors duration-300">
+    <!-- 頂部導覽列 (整合設定按鈕與響應式排版) -->
+    <header class="bg-indigo-600 dark:bg-indigo-800 text-white p-3 md:p-4 shadow-md flex flex-wrap justify-between items-center z-10 transition-colors duration-300 flex-shrink-0 gap-3">
         
         <!-- 左側：標題區塊 -->
-        <div class="flex-1 flex items-center gap-2">
-            <svg class="w-7 h-7 text-white hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <div class="flex items-center gap-2">
+            <svg class="w-6 h-6 md:w-7 md:h-7 text-white hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
             </svg>
-            <h1 class="text-xl md:text-2xl font-bold tracking-wide">Markmap</h1>
+            <h1 class="text-lg md:text-2xl font-bold tracking-wide">Markmap</h1>
         </div>
 
-        <!-- 正中央：深色/淺色模式切換按鈕 (放大且置中) -->
-        <div class="flex-1 flex justify-center">
-            <button id="btn-theme" class="bg-indigo-500 hover:bg-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white p-4 rounded-full transition-all duration-300 shadow-lg flex items-center justify-center transform hover:scale-105 active:scale-95" title="切換深色/淺色模式">
-                <!-- 太陽圖示 -->
-                <svg id="icon-sun" class="w-8 h-8 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                <!-- 月亮圖示 -->
-                <svg id="icon-moon" class="w-8 h-8 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-            </button>
+        <!-- 中央：UI 設定控制面板 (平板觸控友善) -->
+        <div class="flex items-center gap-2 md:gap-3 bg-white/10 p-1.5 md:p-2 rounded-xl backdrop-blur-sm border border-white/20">
+            <!-- 展開層級控制 -->
+            <div class="flex items-center gap-1 md:gap-2">
+                <label for="sel-expand" class="text-xs md:text-sm font-medium px-1 whitespace-nowrap">展開</label>
+                <select id="sel-expand" class="bg-white text-gray-800 text-xs md:text-sm rounded-lg px-2 py-1.5 md:px-3 md:py-2 outline-none cursor-pointer focus:ring-2 focus:ring-indigo-400 font-medium shadow-sm transition-all">
+                    <option value="-1">依文本設定</option>
+                    <option value="1">第 1 層</option>
+                    <option value="2">第 2 層</option>
+                    <option value="3">第 3 層</option>
+                    <option value="4">第 4 層</option>
+                    <option value="5">第 5 層</option>
+                    <option value="999">全部展開</option>
+                </select>
+            </div>
+            
+            <div class="w-px h-6 bg-white/30 hidden sm:block"></div>
+            
+            <!-- 色彩鎖定控制 -->
+            <div class="flex items-center gap-1 md:gap-2">
+                <label for="sel-color" class="text-xs md:text-sm font-medium px-1 whitespace-nowrap">色彩</label>
+                <select id="sel-color" class="bg-white text-gray-800 text-xs md:text-sm rounded-lg px-2 py-1.5 md:px-3 md:py-2 outline-none cursor-pointer focus:ring-2 focus:ring-indigo-400 font-medium shadow-sm transition-all">
+                    <option value="-1">依文本設定</option>
+                    <option value="0">不凍結</option>
+                    <option value="1">第 1 層</option>
+                    <option value="2">第 2 層</option>
+                    <option value="3">第 3 層</option>
+                    <option value="4">第 4 層</option>
+                    <option value="5">第 5 層</option>
+                </select>
+            </div>
         </div>
 
         <!-- 右側：功能按鈕區塊 -->
-        <div class="flex-1 flex justify-end gap-2 md:gap-3">
+        <div class="flex items-center justify-end gap-2 md:gap-3 flex-grow sm:flex-grow-0">
+            <!-- 主題切換按鈕 -->
+            <button id="btn-theme" class="bg-white/10 hover:bg-white/20 text-white p-2 md:p-2.5 rounded-full transition-all duration-300 flex items-center justify-center transform hover:scale-105 active:scale-95 border border-white/20" title="切換深色/淺色模式">
+                <svg id="icon-sun" class="w-5 h-5 md:w-6 md:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="icon-moon" class="w-5 h-5 md:w-6 md:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+            
             <!-- 下載 HTML 按鈕 -->
-            <button id="btn-download" class="bg-green-600 hover:bg-green-500 dark:bg-green-700 dark:hover:bg-green-600 text-white px-4 py-3 md:px-5 md:py-3 rounded-xl text-sm md:text-base transition-colors shadow-sm flex items-center gap-2 font-medium" title="匯出為單獨的 HTML 檔案">
-                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <button id="btn-download" class="bg-green-500 hover:bg-green-400 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="匯出為單獨的 HTML 檔案">
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 <span class="hidden lg:inline">下載 HTML</span>
             </button>
+            
             <!-- 適應螢幕按鈕 -->
-            <button id="btn-fit" class="bg-indigo-500 hover:bg-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white px-4 py-3 md:px-5 md:py-3 rounded-xl text-sm md:text-base transition-colors shadow-sm flex items-center gap-2 font-medium" title="將心智圖縮放至畫面中間，或恢復原視角">
-                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+            <button id="btn-fit" class="bg-indigo-500 hover:bg-indigo-400 text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-xs md:text-sm transition-colors shadow-sm flex items-center gap-1 md:gap-1.5 font-medium" title="將心智圖縮放至畫面中間，或恢復原視角">
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
                 <span id="fit-text" class="hidden lg:inline">適應螢幕</span>
             </button>
         </div>
     </header>
 
-    <!-- 主要內容區 -->
-    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+    <!-- 主要內容區 (加入 id 以便計算拖曳範圍) -->
+    <main id="main-container" class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         
-        <!-- 左側編輯區 -->
-        <section class="w-full md:w-1/3 lg:w-2/5 h-1/2 md:h-full border-b md:border-b-0 md:border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col shadow-inner transition-colors duration-300">
+        <!-- 左側編輯區 (加入 id 並設定預設排版比例) -->
+        <section id="editor-pane" class="w-full h-1/2 md:w-2/5 md:h-full bg-white dark:bg-gray-800 flex flex-col shadow-inner transition-colors duration-300 flex-shrink-0">
             <div class="bg-gray-100 dark:bg-gray-700 px-4 py-3 text-sm md:text-base font-semibold text-gray-500 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 flex justify-between transition-colors duration-300">
                 <span>Markdown 編輯區</span>
                 <span class="hidden md:inline">支援 HTML & 數學公式</span>
             </div>
-            <!-- 加大字體 (text-base md:text-lg) 讓觸控或閱讀更舒適，並防止 iOS 自動縮放 -->
+            <!-- 加大字體讓觸控或閱讀更舒適，並防止 iOS 自動縮放 -->
             <textarea id="editor" class="flex-1 p-5 w-full h-full resize-none font-mono text-base md:text-lg leading-relaxed text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 transition-colors duration-300" spellcheck="false">
 ---
 title: markmap
@@ -438,8 +472,18 @@ markmap:
 </textarea>
         </section>
 
+        <!-- 拖曳調整桿 (Resizer) -->
+        <div id="resizer" class="w-full h-3 md:w-3 md:h-full bg-gray-300 dark:bg-gray-600 hover:bg-indigo-400 dark:hover:bg-indigo-500 active:bg-indigo-500 flex items-center justify-center cursor-row-resize md:cursor-col-resize z-20 flex-shrink-0 transition-colors shadow-sm">
+            <!-- 小圓點視覺提示 -->
+            <div class="flex md:flex-col gap-1">
+                <div class="w-1 h-1 bg-gray-500 dark:bg-gray-400 rounded-full"></div>
+                <div class="w-1 h-1 bg-gray-500 dark:bg-gray-400 rounded-full"></div>
+                <div class="w-1 h-1 bg-gray-500 dark:bg-gray-400 rounded-full"></div>
+            </div>
+        </div>
+
         <!-- 右側心智圖顯示區 -->
-        <section class="w-full md:w-2/3 lg:w-3/5 h-1/2 md:h-full relative bg-white dark:bg-gray-900 transition-colors duration-300">
+        <section class="flex-1 relative bg-white dark:bg-gray-900 transition-colors duration-300 overflow-hidden">
             <svg id="mindmap" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
         </section>
 
@@ -466,8 +510,12 @@ markmap:
         // Markmap 實例變數
         let mm;
 
-        // 追蹤目前的 Markmap 設定 (Frontmatter)，用來判斷是否需要重新初始化
+        // 追蹤目前的 Markmap 設定，用來判斷是否需要重新初始化
         let currentOptionsStr = '';
+
+        // UI 下拉選單元素
+        const selExpand = document.getElementById('sel-expand');
+        const selColor = document.getElementById('sel-color');
 
         // 適應螢幕功能變數
         let isFitted = false;
@@ -510,6 +558,85 @@ markmap:
         const fitText = document.getElementById('fit-text');
         const btnDownload = document.getElementById('btn-download');
 
+        // ==========================================
+        // 面板拖曳調整大小 (Resizer) 邏輯支援滑鼠與觸控
+        // ==========================================
+        const resizer = document.getElementById('resizer');
+        const editorPane = document.getElementById('editor-pane');
+        const mainContainer = document.getElementById('main-container');
+        let isResizing = false;
+
+        const startResize = (e) => {
+            isResizing = true;
+            // 變更游標與防止文字被選取
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = window.innerWidth >= 768 ? 'col-resize' : 'row-resize';
+            
+            document.addEventListener('mousemove', resizePanel);
+            document.addEventListener('touchmove', resizePanel, { passive: false });
+            document.addEventListener('mouseup', stopResize);
+            document.addEventListener('touchend', stopResize);
+        };
+
+        const resizePanel = (e) => {
+            if (!isResizing) return;
+            // 防止平板/手機在拖曳調整桿時畫面跟著捲動
+            if (e.type === 'touchmove') e.preventDefault(); 
+            
+            const isDesktop = window.innerWidth >= 768; // Tailwind 的 md 斷點
+            const containerRect = mainContainer.getBoundingClientRect();
+            
+            // 取得觸控點或滑鼠點的位置
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            
+            if (isDesktop) {
+                // 桌機/橫式平板：調整寬度比例
+                let newWidth = ((clientX - containerRect.left) / containerRect.width) * 100;
+                newWidth = Math.max(10, Math.min(newWidth, 90)); // 限制範圍 10% ~ 90%
+                editorPane.style.width = `${newWidth}%`;
+                editorPane.style.height = '100%';
+            } else {
+                // 手機/直式平板：調整高度比例
+                let newHeight = ((clientY - containerRect.top) / containerRect.height) * 100;
+                newHeight = Math.max(10, Math.min(newHeight, 90)); // 限制範圍 10% ~ 90%
+                editorPane.style.height = `${newHeight}%`;
+                editorPane.style.width = '100%';
+            }
+        };
+
+        const stopResize = () => {
+            isResizing = false;
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            
+            document.removeEventListener('mousemove', resizePanel);
+            document.removeEventListener('touchmove', resizePanel);
+            document.removeEventListener('mouseup', stopResize);
+            document.removeEventListener('touchend', stopResize);
+            
+            // 拖曳結束後，通知 Markmap 更新並重新置中一次
+            if (mm) {
+                setTimeout(() => mm.fit(), 50);
+            }
+        };
+
+        resizer.addEventListener('mousedown', startResize);
+        resizer.addEventListener('touchstart', startResize, { passive: false });
+
+        // 處理視窗大小改變或平板翻轉時的排版切換
+        let lastIsDesktop = window.innerWidth >= 768;
+        window.addEventListener('resize', () => {
+            const currentIsDesktop = window.innerWidth >= 768;
+            if (lastIsDesktop !== currentIsDesktop) {
+                // 斷點切換 (如從橫放變直放)，清除手動設定的行內樣式，恢復預設的 Tailwind class 控制
+                editorPane.style.width = '';
+                editorPane.style.height = '';
+                lastIsDesktop = currentIsDesktop;
+            }
+        });
+
+
         // 當使用者手動拖曳、縮放或在行動裝置上滑動時，自動解除「已適應」狀態
         const resetFitState = () => {
             if (isFitted) {
@@ -525,7 +652,21 @@ markmap:
         btnDownload.addEventListener('click', () => {
             const endTag = '<' + '/script>';
             const scriptRegex = new RegExp(endTag, 'gi');
-            const safeMarkdown = editor.value.replace(scriptRegex, '&lt;/script&gt;');
+            
+            // 抓取當前 UI 選單的設定
+            const uiExpand = parseInt(selExpand.value, 10);
+            const uiColor = parseInt(selColor.value, 10);
+            
+            let finalMdForExport = editor.value.replace(scriptRegex, '&lt;/script&gt;').replace(/\xA0/g, ' ');
+            
+            // 若使用者使用了 UI 下拉選單，則主動寫入 YAML Frontmatter 到匯出檔，確保下載後的設定一致
+            if (uiExpand !== -1 || uiColor !== -1) {
+                let injectedYaml = '---\nmarkmap:\n';
+                if (uiExpand !== -1) injectedYaml += `  initialExpandLevel: ${uiExpand}\n`;
+                if (uiColor !== -1) injectedYaml += `  colorFreezeLevel: ${uiColor}\n`;
+                injectedYaml += '---\n';
+                finalMdForExport = injectedYaml + finalMdForExport;
+            }
             
             const htmlLines = [
                 '<!DOCTYPE html>',
@@ -543,7 +684,7 @@ markmap:
                 '<body>',
                 '    <div class="markmap">',
                 '        <script type="text/template">',
-                safeMarkdown,
+                finalMdForExport,
                 '        ' + endTag,
                 '    </div>',
                 '</body>',
@@ -569,7 +710,6 @@ markmap:
                 const safeMarkdown = markdown.replace(/\xA0/g, ' ');
                 
                 // 1. 解析淨化後的 Markdown 
-                // 【核心修復】在此處正確提取 frontmatter！
                 const { root, features, frontmatter } = transformer.transform(safeMarkdown);
                 
                 // 2. 獲取並載入所需的資源 (例如 Prism.js 或 KaTeX)
@@ -579,18 +719,25 @@ markmap:
                     await loadJS(scripts, { getMarkmap: () => window.markmap });
                 }
                 
-                // 【核心修復】從 frontmatter 中精準取得 markmap 設定，而非從 root.payload
+                // 取得 Markdown frontmatter 內的預設設定
                 const optionsRaw = frontmatter?.markmap || {};
+                
+                // 【核心升級】讀取頂部 UI 下拉選單的數值，若有選擇則強勢覆蓋文本設定
+                const uiExpand = parseInt(selExpand.value, 10);
+                const uiColor = parseInt(selColor.value, 10);
+                
+                if (uiExpand !== -1) optionsRaw.initialExpandLevel = uiExpand;
+                if (uiColor !== -1) optionsRaw.colorFreezeLevel = uiColor;
+                
                 const optionsStr = JSON.stringify(optionsRaw);
                 
-                // 判斷是否為使用者修改了設定區塊 (Frontmatter)
+                // 判斷是否為使用者修改了設定區塊或下拉選單
                 const optionsChanged = currentOptionsStr !== optionsStr;
 
                 // 利用 deriveOptions 將設定轉換為 Markmap 參數
                 let finalOptions = typeof deriveOptions === 'function' ? deriveOptions(optionsRaw) : {};
                 
                 // 【強制套用 initialExpandLevel 的保護機制】
-                // 只有在「設定檔有變動」或「第一次載入」時，強制遞迴複寫圖層的折疊狀態
                 if (optionsRaw.initialExpandLevel !== undefined && (optionsChanged || !mm)) {
                     const level = optionsRaw.initialExpandLevel;
                     const applyExpand = (node, currentDepth) => {
@@ -620,7 +767,7 @@ markmap:
                     isFitted = true;
                     fitText.innerText = '恢復視角';
                 } else if (optionsChanged) {
-                    // 【重點】當使用者更改上方的 yaml 設定時，砍掉重練以確保設定完美生效！
+                    // 【重點】當使用者更改上方的 yaml 或 UI 設定時，砍掉重練以確保設定完美生效！
                     currentOptionsStr = optionsStr;
                     mm.destroy(); 
                     svgEl.innerHTML = ''; 
@@ -651,6 +798,10 @@ markmap:
         editor.addEventListener('input', (e) => {
             debounceUpdate(e.target.value);
         });
+        
+        // 監聽頂部下拉選單的變更事件，一旦變更立刻強制更新畫面
+        selExpand.addEventListener('change', () => debounceUpdate(editor.value));
+        selColor.addEventListener('change', () => debounceUpdate(editor.value));
 
         // 處理編輯器內的 Tab 鍵，使其輸入縮排而不是切換焦點
         editor.addEventListener('keydown', function(e) {
@@ -685,6 +836,13 @@ markmap:
                 mm.fit();
                 isFitted = true;
                 fitText.innerText = '恢復視角';
+            }
+        });
+
+        // 處理視窗縮放事件，讓心智圖保持置中
+        window.addEventListener('resize', () => {
+            if (mm) {
+                setTimeout(() => mm.fit(), 200);
             }
         });
 
