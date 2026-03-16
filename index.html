@@ -56,29 +56,50 @@
         html.dark svg#mindmap a {
             color: #60a5fa;
         }
+        /* 讓可點擊折疊的「小圓圈」更明顯，增加滑鼠懸停動畫提示 */
+        svg#mindmap .markmap-node circle {
+            cursor: pointer;
+            transition: r 0.2s ease;
+        }
+        svg#mindmap .markmap-node circle:hover {
+            r: 6px; 
+        }
     </style>
 </head>
 <body class="bg-gray-50 h-screen flex flex-col font-sans text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-200">
 
-    <!-- 頂部導覽列 -->
-    <header class="bg-indigo-600 dark:bg-indigo-800 text-white p-4 shadow-md flex justify-between items-center z-10 transition-colors duration-300">
-        <div class="flex items-center gap-2">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <!-- 頂部導覽列 (特別針對平板觸控放大並重新排版) -->
+    <header class="bg-indigo-600 dark:bg-indigo-800 text-white p-4 md:p-5 shadow-md flex justify-between items-center z-10 transition-colors duration-300">
+        
+        <!-- 左側：標題區塊 -->
+        <div class="flex-1 flex items-center gap-2">
+            <svg class="w-7 h-7 text-white hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
             </svg>
-            <h1 class="text-xl font-bold tracking-wide">Markmap 編輯器</h1>
+            <h1 class="text-xl md:text-2xl font-bold tracking-wide">Markmap</h1>
         </div>
-        <div class="flex gap-3">
-            <!-- 深色/淺色模式切換按鈕 -->
-            <button id="btn-theme" class="bg-indigo-500 hover:bg-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white p-2 rounded transition-colors shadow-sm flex items-center justify-center" title="切換深色/淺色模式">
+
+        <!-- 正中央：深色/淺色模式切換按鈕 (放大且置中) -->
+        <div class="flex-1 flex justify-center">
+            <button id="btn-theme" class="bg-indigo-500 hover:bg-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white p-4 rounded-full transition-all duration-300 shadow-lg flex items-center justify-center transform hover:scale-105 active:scale-95" title="切換深色/淺色模式">
                 <!-- 太陽圖示 -->
-                <svg id="icon-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="icon-sun" class="w-8 h-8 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 <!-- 月亮圖示 -->
-                <svg id="icon-moon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <svg id="icon-moon" class="w-8 h-8 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
             </button>
-            <button id="btn-fit" class="bg-indigo-500 hover:bg-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm transition-colors shadow-sm flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                適應螢幕
+        </div>
+
+        <!-- 右側：功能按鈕區塊 -->
+        <div class="flex-1 flex justify-end gap-2 md:gap-3">
+            <!-- 下載 HTML 按鈕 -->
+            <button id="btn-download" class="bg-green-600 hover:bg-green-500 dark:bg-green-700 dark:hover:bg-green-600 text-white px-4 py-3 md:px-5 md:py-3 rounded-xl text-sm md:text-base transition-colors shadow-sm flex items-center gap-2 font-medium" title="匯出為單獨的 HTML 檔案">
+                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span class="hidden lg:inline">下載 HTML</span>
+            </button>
+            <!-- 適應螢幕按鈕 -->
+            <button id="btn-fit" class="bg-indigo-500 hover:bg-indigo-400 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white px-4 py-3 md:px-5 md:py-3 rounded-xl text-sm md:text-base transition-colors shadow-sm flex items-center gap-2 font-medium" title="將心智圖縮放至畫面中間">
+                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                <span class="hidden lg:inline">適應螢幕</span>
             </button>
         </div>
     </header>
@@ -88,11 +109,12 @@
         
         <!-- 左側編輯區 -->
         <section class="w-full md:w-1/3 lg:w-2/5 h-1/2 md:h-full border-b md:border-b-0 md:border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col shadow-inner transition-colors duration-300">
-            <div class="bg-gray-100 dark:bg-gray-700 px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 flex justify-between transition-colors duration-300">
+            <div class="bg-gray-100 dark:bg-gray-700 px-4 py-3 text-sm md:text-base font-semibold text-gray-500 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 flex justify-between transition-colors duration-300">
                 <span>Markdown 編輯區</span>
-                <span>支援 HTML & 數學公式</span>
+                <span class="hidden md:inline">支援 HTML & 數學公式</span>
             </div>
-            <textarea id="editor" class="flex-1 p-4 w-full h-full resize-none font-mono text-sm leading-relaxed text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 transition-colors duration-300" spellcheck="false">
+            <!-- 加大字體 (text-base md:text-lg) 讓觸控或閱讀更舒適，並防止 iOS 自動縮放 -->
+            <textarea id="editor" class="flex-1 p-5 w-full h-full resize-none font-mono text-base md:text-lg leading-relaxed text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 transition-colors duration-300" spellcheck="false">
 ---
 title: markmap
 markmap:
@@ -482,6 +504,51 @@ markmap:
         const editor = document.getElementById('editor');
         const svgEl = document.getElementById('mindmap');
         const btnFit = document.getElementById('btn-fit');
+        const btnDownload = document.getElementById('btn-download');
+
+        // 下載 HTML 檔案的專屬邏輯
+        btnDownload.addEventListener('click', () => {
+            // 防護措施：使用動態拼接建立正則表達式，避免原始碼被瀏覽器誤判為 script 提早閉合
+            const endTag = '<' + '/script>';
+            const scriptRegex = new RegExp(endTag, 'gi');
+            const safeMarkdown = editor.value.replace(scriptRegex, '&lt;/script&gt;');
+            
+            // 使用陣列合併字串，徹底避開樣板字串 (Template Literal) 在部分環境可能引發的解析異常
+            const htmlLines = [
+                '<!DOCTYPE html>',
+                '<html lang="zh-TW">',
+                '<head>',
+                '    <meta charset="UTF-8">',
+                '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
+                '    <title>Markmap 匯出心智圖</title>',
+                '    <style>',
+                '        body { margin: 0; padding: 0; width: 100vw; height: 100vh; font-family: sans-serif; }',
+                '        .markmap { width: 100%; height: 100%; }',
+                '    </style>',
+                '    <script src="https://cdn.jsdelivr.net/npm/markmap-autoloader@0.18.9">' + endTag,
+                '</head>',
+                '<body>',
+                '    <div class="markmap">',
+                '        <script type="text/template">',
+                safeMarkdown,
+                '        ' + endTag,
+                '    </div>',
+                '</body>',
+                '</html>'
+            ];
+            const htmlContent = htmlLines.join('\n');
+            
+            // 使用 Blob 生成檔案連結並觸發自動下載
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'markmap-mindmap.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
 
         // 核心更新函數：將 Markdown 轉為心智圖
         const updateMindmap = async (markdown) => {
@@ -505,23 +572,26 @@ markmap:
                     ? deriveOptions(optionsRaw) 
                     : optionsRaw;
                     
-                const finalOptions = { autoFit: true, ...frontmatterOptions };
+                // 移除 autoFit: true，避免每次點擊展開/折疊或打字時，畫面強制跳動回中間
+                const finalOptions = { ...frontmatterOptions };
 
                 // 3. 渲染心智圖
                 if (!mm) {
                     // 第一次初始化
                     currentOptionsStr = optionsStr;
                     mm = Markmap.create(svgEl, finalOptions, root);
+                    mm.fit(); // 初始化後主動適應螢幕一次
                 } else if (currentOptionsStr !== optionsStr) {
                     // 若偵測到 frontmatter 設定有改變 (如使用者修改 initialExpandLevel)
                     currentOptionsStr = optionsStr;
                     mm.destroy(); // 正確銷毀前一個圖形實例
                     svgEl.innerHTML = ''; // 清空 SVG 標籤內容
                     mm = Markmap.create(svgEl, finalOptions, root);
+                    mm.fit(); // 重新建立後主動適應螢幕一次
                 } else {
-                    // 更新現有資料 (保留使用者手動折疊的狀態)
+                    // 更新現有資料 (保留使用者手動折疊的狀態與當前視角)
                     mm.setData(root);
-                    mm.fit(); // 更新後自動縮放適應螢幕
+                    // 移除此處的 mm.fit()，讓使用者在左側編輯時，右側圖形不會一直飛回預設位置
                 }
             } catch (error) {
                 console.error("渲染心智圖時發生錯誤:", error);
